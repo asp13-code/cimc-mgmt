@@ -54,6 +54,8 @@ if r.status_code == 200:
     print("success")
 else:
     print("failure: " + "[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))
+    print("[ERROR] HTTP Status code error")
+    print("[DEBUG] " + r.text + "HTTP code: " + str(r.status_code))    
     sys.exit(1)
 
 
@@ -66,7 +68,9 @@ elif "errorDescr" in response_dict["aaaLogin"]:
     print("[ERROR] " + response_dict["aaaLogin"]["errorDescr"])
     sys.exit(1)
 else:
-    print("failure: 'outPriv' attribute is absent,  " + "[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))
+    print("failure)
+    print("[ERROR] 'outPriv' attribute is absent")
+    print("[DEBUG] " + r.text + "HTTP code :" + str(r.status_code))    
     sys.exit(1)
 
 print("[INFO] Looking for session cookie... ", end = '')
@@ -81,7 +85,9 @@ elif "errorDescr" in response_dict["aaaLogin"]:
     print("[DEBUG] " + r.text)
 
 else:
-    print("failure: 'outCookie' attribute is absent,  " + "[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))
+    print("failure)
+    print("[ERROR] 'outCookie' attribute is absent")
+    print("[DEBUG] " + r.text + "HTTP code: " + str(r.status_code))    
     sys.exit(1)
 
 
