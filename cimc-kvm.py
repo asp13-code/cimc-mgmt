@@ -26,7 +26,6 @@ def cimc_logout():
     elif "errorDescr" in response_dict["aaaLogout"]:
         print("failure")
         print("[ERROR] " + response_dict["aaaLogout"]["errorDescr"])
-        print("[DEBUG] " + r.text)
     else:
         print("failure")
         print("[ERROR] 'outStatus' attribute is absent")
@@ -56,7 +55,7 @@ response_dict = xmltodict.parse(r.text, attr_prefix='')
 if r.status_code == 200:
     print("success")
 else:
-    print("failure)
+    print("failure")
     print("[ERROR] HTTP Status code error")
     print("[DEBUG] " + r.text + "HTTP code: " + str(r.status_code))    
     sys.exit(1)
@@ -69,10 +68,9 @@ if "outPriv" in response_dict["aaaLogin"]:
 elif "errorDescr" in response_dict["aaaLogin"]:
     print("failure")
     print("[ERROR] " + response_dict["aaaLogin"]["errorDescr"])
-    print("[DEBUG] " + r.text)    
     sys.exit(1)
 else:
-    print("failure)
+    print("failure")
     print("[ERROR] 'outPriv' attribute is absent")
     print("[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))    
     sys.exit(1)
@@ -81,15 +79,14 @@ print("[INFO] Looking for session cookie... ", end = '')
 if "outCookie" in response_dict["aaaLogin"]:
     print("success")
     cimc_session_cookie = response_dict["aaaLogin"]["outCookie"]
-    cimc_session_timeout = int(response_dict["aaaLogin"]["outRefreshPeriod"]) - 487
+    cimc_session_timeout = int(response_dict["aaaLogin"]["outRefreshPeriod"])
 
 elif "errorDescr" in response_dict["aaaLogin"]:
     print("failure")
     print("[ERROR] " + response_dict["aaaLogin"]["errorDescr"])
-    print("[DEBUG] " + r.text)
 
 else:
-    print("failure)
+    print("failure")
     print("[ERROR] 'outCookie' attribute is absent")
     print("[DEBUG] " + r.text + "HTTP code: " + str(r.status_code))    
     sys.exit(1)
@@ -97,7 +94,7 @@ else:
 
 # # Step 2. Generating temporary authentication tokens
 cimc_xml_aaaGetComputeAuthTokens = "<aaaGetComputeAuthTokens  cookie='%s' />" % (cimc_session_cookie)
-print("[INFO] Requesting temporary authentication tokens...   " , end = '')
+print("[INFO] Requesting temporary authentication tokens... " , end = '')
 r = requests.post(url_api,data=cimc_xml_aaaGetComputeAuthTokens,verify=False,headers=headers,timeout=http_timeout)
 response_dict = xmltodict.parse(r.text, attr_prefix='')
 if "outTokens" in response_dict["aaaGetComputeAuthTokens"]:
@@ -108,17 +105,17 @@ if "outTokens" in response_dict["aaaGetComputeAuthTokens"]:
     kvm_url = "https://" + server + "/kvm.jnlp?cimcAddr=" + server + "&tkn1=" + cimc_auth_cookies[0] + "&tkn2=" + cimc_auth_cookies[1]
 
     # Step 4. Launching the KVM
-    # viewer = Popen(["/Applications/OpenWebStart/OpenWebStart javaws.app/Contents/MacOS/JavaApplicationStub", kvm_url])
     print("[INFO] Launching java web start... ", end = '')
     process = Popen(["javaws", kvm_url])
     stdoutdata, stderrdata = process.communicate()
     if process.returncode == 0:
         print("success")
     else:
-        print("ERROR: Return code: " + str(process.returncode))
+        print("[ERROR] Return code: " + str(process.returncode))
         
     print("[INFO] Counting login session timeout. Press <ctrl-c> for graceful logout... ")
 
+    #countdown before login session expires
     cst_len = len(str(cimc_session_timeout))
     while cimc_session_timeout > 0 :    
         if len(str(cimc_session_timeout)) < cst_len:
@@ -128,6 +125,7 @@ if "outTokens" in response_dict["aaaGetComputeAuthTokens"]:
         time.sleep(1)
         cimc_session_timeout -=  1
     
+    #session@CIMC has expired. No need to logout
     if cimc_session_timeout == 0:
         print("\r[INFO] Exiting")
         sys.exit(0)
@@ -135,7 +133,6 @@ if "outTokens" in response_dict["aaaGetComputeAuthTokens"]:
 elif "errorDescr" in response_dict["aaaGetComputeAuthTokens"]:
     print("failure")
     print("[ERROR] " + response_dict["aaaGetComputeAuthTokens"]["errorDescr"])
-    print("[DEBUG] " + r.text)
 
 else:
     print("failure")
