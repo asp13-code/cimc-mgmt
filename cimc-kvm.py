@@ -26,8 +26,11 @@ def cimc_logout():
     elif "errorDescr" in response_dict["aaaLogout"]:
         print("failure")
         print("[ERROR] " + response_dict["aaaLogout"]["errorDescr"])
+        print("[DEBUG] " + r.text)
     else:
-        print("failure: 'outStatus' attribute is absent,  " + "[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))
+        print("failure")
+        print("[ERROR] 'outStatus' attribute is absent")
+        print("[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))
     sys.exit(0)
 
 
@@ -53,7 +56,7 @@ response_dict = xmltodict.parse(r.text, attr_prefix='')
 if r.status_code == 200:
     print("success")
 else:
-    print("failure: " + "[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))
+    print("failure)
     print("[ERROR] HTTP Status code error")
     print("[DEBUG] " + r.text + "HTTP code: " + str(r.status_code))    
     sys.exit(1)
@@ -66,11 +69,12 @@ if "outPriv" in response_dict["aaaLogin"]:
 elif "errorDescr" in response_dict["aaaLogin"]:
     print("failure")
     print("[ERROR] " + response_dict["aaaLogin"]["errorDescr"])
+    print("[DEBUG] " + r.text)    
     sys.exit(1)
 else:
     print("failure)
     print("[ERROR] 'outPriv' attribute is absent")
-    print("[DEBUG] " + r.text + "HTTP code :" + str(r.status_code))    
+    print("[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))    
     sys.exit(1)
 
 print("[INFO] Looking for session cookie... ", end = '')
@@ -134,8 +138,10 @@ elif "errorDescr" in response_dict["aaaGetComputeAuthTokens"]:
     print("[DEBUG] " + r.text)
 
 else:
-    print("failure: 'outTokens' attribute is absent," + "[DEBUG] " + r.text)
+    print("failure")
+    print("[ERROR] 'outTokens' attribute is absent")
+    print("[DEBUG] " + r.text + "HTTP code:" + str(r.status_code))    
 
 
-# Executing session logout
+# Executing graceful session logout
 cimc_logout()
