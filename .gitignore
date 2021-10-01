@@ -1,0 +1,7 @@
+tt*
+dev_*
+test_*
+deb_*
+*.swp
+private_*
+.vscode*
