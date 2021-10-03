@@ -30,4 +30,4 @@ https://gist.github.com/ixs/3e305a34bd25e1b57b34cf222d6947e4
 ## Disclamier
 1. This software provided as is and should be used on your own risk
 2. I'm not a programmer and this is my first python code
-3. Can't help. Especially beyond python side. Java is totally outside of the scope
+3. Can't help. Especially beyond python side. Java is totally outside of the scope. Nope.
