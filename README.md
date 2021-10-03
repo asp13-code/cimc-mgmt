@@ -1,6 +1,6 @@
 # CIMC-KVM
 ## Description
-cimc-mgmt is a python tool to connect to old flash-based Cisco UCS CIMC (Cisco Integrated Management Controller) KVM console. Since Flash has been phased out this is the only way to connect.
+cimc-kvm is a python tool to connect to old flash-based Cisco UCS CIMC (Cisco Integrated Management Controller) KVM console. Since Flash has been phased out this is the only way to connect.
 
 ## Tested
 ### CIMC side:
