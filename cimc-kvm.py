@@ -11,6 +11,7 @@ from subprocess import Popen
 import xmltodict
 import signal
 import sys
+import re
 from getpass import getpass
 
 requests.packages.urllib3.disable_warnings()
@@ -19,7 +20,7 @@ requests.packages.urllib3.disable_warnings()
 def cimc_logout():
     print("\r[INFO] Logging out from " + server + "... ", end = '')
     cimc_xml_aaaLogout = "<aaaLogout cookie='%s' inCookie='%s'></aaaLogout>" % (cimc_session_cookie, cimc_session_cookie)
-    r = requests.post(url_api,data=cimc_xml_aaaLogout,verify=False,headers=headers,timeout=http_timeout)
+    r = cimc_send(cimc_xml_aaaLogout)
     response_dict = xmltodict.parse(r.text, attr_prefix='')
     if "outStatus" in response_dict["aaaLogout"]:
         print("success")
@@ -37,9 +38,35 @@ def signal_handler(sig, frame):
     cimc_logout()
 
 
+def cimc_send(cimc_xml_request):
+    try:
+        cimc_xml_respond = requests.post(url_api,data=cimc_xml_request,verify=False,headers=headers,timeout=http_timeout)    
+    except requests.exceptions.ConnectTimeout as reCT:
+        print("failure")
+        print("[ERROR] ConnectionTimeout: ", end = '')
+        print(reCT)    
+        sys.exit(1)
+    except requests.exceptions.ConnectionError as reCE:
+        print("failure")
+        print("[ERROR] Connection refused: ", end = '')
+        print(reCE)
+        sys.exit(1)
+
+    if cimc_xml_respond.status_code != 200:
+        print("failure")
+        print("[ERROR] HTTP Status code error")
+        print("[DEBUG] " + cimc_xml_respond.text + "HTTP code: " + str(cimc_xml_respond.status_code))    
+        sys.exit(1)
+
+    return cimc_xml_respond
+
+
+############
+#  Main body
+############
 
 #Setting principal variables
-server = input("Enter CIMC IP address: ")
+server = input("\nEnter CIMC IP address: ")
 username = input("Enter user: ")
 password = getpass("Enter password: ")
 url_api = "https://" + server + "/nuova"
@@ -48,18 +75,11 @@ http_timeout = 30
 
 
 # Step 1. Logging in and retrieving a session cookie
-cimc_xml_aaaLogin = "<aaaLogin inName='" + username + "' inPassword='" + password + "'></aaaLogin>"
 print("\n[INFO] Checking HTTP response from " + server + "... ", end = '')
-r = requests.post(url_api,data=cimc_xml_aaaLogin,verify=False,headers=headers,timeout=http_timeout)
+cimc_xml_aaaLogin = "<aaaLogin inName='" + username + "' inPassword='" + password + "'></aaaLogin>"
+r = cimc_send(cimc_xml_aaaLogin)
 response_dict = xmltodict.parse(r.text, attr_prefix='')
-if r.status_code == 200:
-    print("success")
-else:
-    print("failure")
-    print("[ERROR] HTTP Status code error")
-    print("[DEBUG] " + r.text + "HTTP code: " + str(r.status_code))    
-    sys.exit(1)
-
+print("success")
 
 print("[INFO] Logging into " + server + "... ", end = '')
 if "outPriv" in response_dict["aaaLogin"]:
@@ -92,16 +112,45 @@ else:
     sys.exit(1)
 
 
-# # Step 2. Generating temporary authentication tokens
-cimc_xml_aaaGetComputeAuthTokens = "<aaaGetComputeAuthTokens  cookie='%s' />" % (cimc_session_cookie)
-print("[INFO] Requesting temporary authentication tokens... " , end = '')
-r = requests.post(url_api,data=cimc_xml_aaaGetComputeAuthTokens,verify=False,headers=headers,timeout=http_timeout)
+# checking for compatible CIMC version
+print("[INFO] Checking CIMC compatibility... ", end = '')
+
+cimc_xml_configResolveClass = "<configResolveClass cookie='%s' inHierarchical='false' classId='firmwareRunning'/>" % (cimc_session_cookie)
+
+r = cimc_send(cimc_xml_configResolveClass)
+
 response_dict = xmltodict.parse(r.text, attr_prefix='')
+
+cimc_version = response_dict["configResolveClass"]["outConfigs"]["firmwareRunning"][2]["version"]
+
+cv_major = re.search(r'^\d',cimc_version)
+
+if cv_major is not None:
+    if cv_major.group(0) == "2" or cv_major.group(0) == "3":
+        print("compatible " + cimc_version)
+    else:
+        print("incompatible " + cimc_version)
+        print("[WARNING] CIMC version seems to be incompatible or untested. Trying to continue...")
+else:
+    print("incompatible")
+    print("[ERROR] CIMC version hasn't been found. Exiting...")
+    cimc_logout()
+
+
+# # Step 2. Generating temporary authentication tokens
+print("[INFO] Requesting temporary authentication tokens... " , end = '')
+
+cimc_xml_aaaGetComputeAuthTokens = "<aaaGetComputeAuthTokens  cookie='%s' />" % (cimc_session_cookie)
+
+r = cimc_send(cimc_xml_aaaGetComputeAuthTokens)
+
+response_dict = xmltodict.parse(r.text, attr_prefix='')
+
 if "outTokens" in response_dict["aaaGetComputeAuthTokens"]:
     print("success")
     cimc_auth_cookies = response_dict["aaaGetComputeAuthTokens"]["outTokens"].split(',')
 
-    # Step 3. Forming URL to download the JNLP file using the tokens 
+    # Step 3. Forming URL to download the JNLP file using auth tokens 
     kvm_url = "https://" + server + "/kvm.jnlp?cimcAddr=" + server + "&tkn1=" + cimc_auth_cookies[0] + "&tkn2=" + cimc_auth_cookies[1]
 
     # Step 4. Launching the KVM
