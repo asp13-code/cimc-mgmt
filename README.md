@@ -12,7 +12,7 @@ cimc-mgmt is a python tool to connect to old flash-based Cisco UCS CIMC (Cisco I
  - May not work on MacOS BigSur due to java error (can't help it)
 
 ## Requirements
-1. Python v3 and all required libraries (see script import lines)
+1. Python v3 and all required libraries (see script import lines) https://www.python.org/downloads/
 2. Java https://www.java.com
 
 ## Installation
